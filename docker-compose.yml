@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: byr-app
+    ports:
+      - "28341:28341"
+    restart: unless-stopped
