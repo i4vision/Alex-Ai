@@ -2,6 +2,7 @@
 FROM node:18-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY package*.json ./
+ENV NODE_ENV=development
 RUN npm install
 COPY . .
 RUN npm run build
