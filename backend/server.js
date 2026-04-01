@@ -17,7 +17,12 @@ const VAPI_ASSISTANT_ID = process.env.VAPI_ASSISTANT_ID;
 const VAPI_PHONE_NUMBER_ID = process.env.VAPI_PHONE_NUMBER_ID;
 
 const { OpenAI } = require('openai');
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let openai = null;
+try {
+  openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY || 'missing_key' });
+} catch (err) {
+  console.warn("WARN: OPENAI_API_KEY is missing. AI features will fail until configured.");
+}
 
 // In-memory store for call records (replace with DB for production)
 const callsDatabase = {};
