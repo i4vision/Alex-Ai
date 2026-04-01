@@ -1,5 +1,5 @@
 # Stage 1: Build the React Frontend
-FROM node:18-alpine AS frontend-builder
+FROM node:22-alpine AS frontend-builder
 WORKDIR /app/frontend
 COPY package.json ./
 ENV NODE_ENV=development
@@ -8,7 +8,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Setup the Backend Monolith
-FROM node:18-alpine
+FROM node:22-alpine
 WORKDIR /app
 COPY backend/package*.json ./
 RUN npm install --production
