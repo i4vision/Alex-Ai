@@ -1,0 +1,27 @@
+Success! Fetched 1 reservations.
+Meta: {
+  "current_page": 1,
+  "from": 1,
+  "last_page": 1,
+  "links": [
+    {
+      "url": null,
+      "label": "&laquo; Previous",
+      "active": false
+    },
+    {
+      "url": "http://public.api.hospitable.com/v2/reservations?page=1",
+      "label": "1",
+      "active": true
+    },
+    {
+      "url": null,
+      "label": "Next &raquo;",
+      "active": false
+    }
+  ],
+  "path": "http://public.api.hospitable.com/v2/reservations",
+  "per_page": 10,
+  "to": 1,
+  "total": 1
+}

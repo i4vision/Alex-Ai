@@ -1,0 +1,10 @@
+{
+  "error": "Failed to initiate call",
+  "details": {
+    "message": [
+      "assistantOverrides.model.provider must be one of the following values: openai, azure-openai, together-ai, anyscale, openrouter, perplexity-ai, deepinfra, custom-llm, baseten, runpod, groq, vapi, anthropic, anthropic-bedrock, anthropic-vertex, minimax, google, xai, inflection-ai, cerebras, deep-seek, mistral"
+    ],
+    "error": "Bad Request",
+    "statusCode": 400
+  }
+}

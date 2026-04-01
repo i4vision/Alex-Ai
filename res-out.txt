@@ -1,0 +1,47 @@
+{
+  "id": "aa54cb2f-5453-47a9-866e-4374fe1ebd21",
+  "code": "HMZ8TSW94P",
+  "platform": "airbnb",
+  "platform_id": "HMZ8TSW94P",
+  "booking_date": "2026-03-25T07:28:43Z",
+  "arrival_date": "2026-03-31T00:00:00-07:00",
+  "departure_date": "2026-04-05T00:00:00-07:00",
+  "check_in": "2026-03-31T15:00:00-07:00",
+  "check_out": "2026-04-05T09:00:00-07:00",
+  "nights": 5,
+  "stay_type": "guest_stay",
+  "owner_stay": null,
+  "reservation_status": {
+    "current": {
+      "category": "accepted",
+      "sub_category": null
+    },
+    "history": [
+      {
+        "category": "accepted",
+        "sub_category": null,
+        "changed_at": "2026-03-25T07:29:02+00:00"
+      }
+    ]
+  },
+  "conversation_id": "f2f65c09-2b6e-401b-8ec0-3c3e1745f654",
+  "conversation_language": "English",
+  "last_message_at": "2026-03-25T09:26:25+00:00",
+  "notes": null,
+  "guests": {
+    "total": 4,
+    "adult_count": 4,
+    "child_count": 0,
+    "infant_count": 0,
+    "pet_count": 0
+  },
+  "issue_alert": null,
+  "status": "accepted",
+  "status_history": [
+    {
+      "category": "Accepted",
+      "status": "accepted",
+      "changed_at": "2026-03-25T07:29:02+00:00"
+    }
+  ]
+}

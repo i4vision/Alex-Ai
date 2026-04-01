@@ -1,0 +1,13 @@
+{
+  "error": "Failed to initiate call",
+  "details": {
+    "statusCode": 400,
+    "message": "Couldn't Get Phone Number. Need Either `phoneNumberId` Or `phoneNumber`.",
+    "error": "Bad Request",
+    "subscriptionLimits": {
+      "concurrencyBlocked": false,
+      "concurrencyLimit": 10,
+      "remainingConcurrentCalls": 9
+    }
+  }
+}

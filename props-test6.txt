@@ -1,0 +1,12 @@
+Guest Object: {
+  "id": "689659726",
+  "location": "Bakersfield, CA",
+  "profile_picture": "https://a0.muscache.com/im/pictures/user/User/original/9a1a709f-be03-49ff-be50-eaa671b3e875.jpeg?aki_policy=profile_large",
+  "email": null,
+  "phone_numbers": [
+    "16615160817"
+  ],
+  "first_name": "Amrita",
+  "last_name": "Bassi",
+  "language": "en"
+}

@@ -1,0 +1,67 @@
+{
+  "id": "94170d76-06b9-49fd-b800-2b81c950c122",
+  "code": "HM4CPPNBTY",
+  "platform": "airbnb",
+  "platform_id": "HM4CPPNBTY",
+  "booking_date": "2026-03-26T03:02:25Z",
+  "arrival_date": "2026-04-14T00:00:00-07:00",
+  "departure_date": "2026-04-20T00:00:00-07:00",
+  "check_in": "2026-04-14T15:00:00-07:00",
+  "check_out": "2026-04-20T09:00:00-07:00",
+  "nights": 6,
+  "stay_type": "guest_stay",
+  "owner_stay": null,
+  "reservation_status": {
+    "current": {
+      "category": "cancelled",
+      "sub_category": null
+    },
+    "history": [
+      {
+        "category": "accepted",
+        "sub_category": null,
+        "changed_at": "2026-03-26T03:02:45+00:00"
+      },
+      {
+        "category": "cancelled",
+        "sub_category": null,
+        "changed_at": "2026-03-26T03:13:49+00:00"
+      }
+    ]
+  },
+  "conversation_id": "3773856b-23e7-4648-842d-ea93f757abff",
+  "conversation_language": "English",
+  "last_message_at": "2026-03-26T08:28:21+00:00",
+  "notes": null,
+  "guests": {
+    "total": 2,
+    "adult_count": 2,
+    "child_count": 0,
+    "infant_count": 0,
+    "pet_count": 0
+  },
+  "guest": {
+    "id": "564887410",
+    "location": "Bakersfield, CA",
+    "profile_picture": "https://a0.muscache.com/im/pictures/user/User/original/b474c870-b0ea-4c3e-b264-d8701abc03ae.jpeg?aki_policy=profile_large",
+    "email": null,
+    "phone_numbers": [],
+    "first_name": "Ruby",
+    "last_name": "Belmontes",
+    "language": "en"
+  },
+  "issue_alert": null,
+  "status": "cancelled",
+  "status_history": [
+    {
+      "category": "Accepted",
+      "status": "accepted",
+      "changed_at": "2026-03-26T03:02:45+00:00"
+    },
+    {
+      "category": "Cancelled",
+      "status": "canceled",
+      "changed_at": "2026-03-26T03:13:49+00:00"
+    }
+  ]
+}
