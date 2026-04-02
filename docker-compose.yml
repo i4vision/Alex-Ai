@@ -6,6 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: byr-app
+    environment:
+      - PORT
+      - OPENAI_API_KEY
+      - VAPI_PRIVATE_KEY
+      - VAPI_ASSISTANT_ID
+      - VAPI_PHONE_NUMBER_ID
     ports:
       - "28341:28341"
     restart: unless-stopped
