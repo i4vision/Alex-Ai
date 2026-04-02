@@ -162,7 +162,8 @@ function App() {
         setCurrentCallId(data.callId);
         pollCallDetails(data.callId);
       } else {
-        alert('Failed to initiate call: ' + (data.error || 'Unknown error'));
+        const errorDetails = data.details ? (typeof data.details === 'object' ? JSON.stringify(data.details, null, 2) : data.details) : '';
+        alert('Failed to initiate call: ' + (data.error || 'Unknown error') + (errorDetails ? '\n\nDetails: ' + errorDetails : '\n\n(Did you forget to add VAPI credentials in Portainer?)'));
       }
     } catch (e) {
       console.error(e);
