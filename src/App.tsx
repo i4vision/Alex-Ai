@@ -18,6 +18,24 @@ const formatDateRange = (start: string, end: string) => {
   }
 };
 
+const formatPhoneNumber = (phone: string) => {
+  if (!phone) return '';
+  const digits = phone.replace(/\D/g, '');
+  let nationalNumber = digits;
+  
+  if (digits.length === 11 && digits.startsWith('1')) {
+    nationalNumber = digits.substring(1);
+  } else if (digits.length > 11) {
+    return '+' + digits; 
+  }
+  
+  if (nationalNumber.length === 10) {
+    return `+1 (${nationalNumber.substring(0,3)}) ${nationalNumber.substring(3,6)}-${nationalNumber.substring(6)}`;
+  }
+  
+  return '+1 ' + phone; // fallback to append +1 arbitrarily if not 10 digits as requested
+};
+
 const getStatusIcon = (start: string, end: string) => {
   try {
     const s = parseISO(start);
@@ -379,6 +397,8 @@ function App() {
              phone = override.phone_number || phone;
              pictureUrl = override.picture_url || pictureUrl;
           }
+          
+          phone = formatPhoneNumber(phone);
 
           return {
             id: item.id || Math.random().toString(),
@@ -423,7 +443,13 @@ function App() {
   }, []);
 
   const uniqueProperties = useMemo(() => {
-    return Array.from(new Set(reservations.map(r => r.property_name).filter((p): p is string => !!p))).sort();
+    return Array.from(new Set(reservations.map(r => r.property_name).filter((p): p is string => !!p)))
+      .sort((a, b) => {
+        const numA = parseInt(a.split(' ')[0], 10);
+        const numB = parseInt(b.split(' ')[0], 10);
+        if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
+        return a.localeCompare(b);
+      });
   }, [reservations]);
 
   const filteredReservations = useMemo(() => {
