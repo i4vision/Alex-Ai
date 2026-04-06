@@ -583,3 +583,63 @@ body {
   text-transform: capitalize;
   align-self: flex-start;
 }
+
+@media (max-width: 768px) {
+  .app-container {
+    flex-direction: column;
+  }
+  
+  .app-container.has-active-guest .sidebar {
+    display: none;
+  }
+  
+  .app-container:not(.has-active-guest) .main-area {
+    display: none;
+  }
+  
+  .sidebar {
+    width: 100%;
+    border-right: none;
+  }
+  
+  .main-area {
+    width: 100%;
+    padding: 16px;
+  }
+  
+  .guest-profile-banner {
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+    padding: 20px;
+  }
+  
+  .guest-meta {
+    justify-content: center;
+  }
+  
+  .sidebar-header {
+    padding-bottom: 8px;
+  }
+  
+  .mobile-back-btn {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: none;
+    border: none;
+    color: var(--brand-color);
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    cursor: pointer;
+    align-self: flex-start;
+    padding: 8px 0;
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-back-btn {
+    display: none;
+  }
+}

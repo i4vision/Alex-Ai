@@ -538,7 +538,7 @@ function App() {
   }
 
   return (
-    <div className="app-container">
+    <div className={`app-container ${activeGuest ? 'has-active-guest' : ''}`}>
       {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
@@ -651,6 +651,9 @@ function App() {
       <div className="main-area" style={{ position: 'relative' }}>
         {activeGuest ? (
           <>
+             <button className="mobile-back-btn" onClick={() => setActiveGuest(null)}>
+               &#8592; Volver a la Lista
+             </button>
             <div className="guest-profile-banner">
               <div className="avatar avatar-large" style={activeGuest.guest.picture_url ? { backgroundImage: `url(${activeGuest.guest.picture_url})` } : {}}>
                 {!activeGuest.guest.picture_url && getInitials(activeGuest.guest.first_name, activeGuest.guest.last_name)}
