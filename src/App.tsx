@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Search, Phone, CalendarCheck2, Info, X, Loader2, Settings, Plus, Trash2, Edit2, Save } from 'lucide-react';
+import { Search, Phone, CalendarCheck2, Info, X, Loader2, Settings, MessageSquare, Plus, Trash2, Edit2, Save } from 'lucide-react';
 import { format, parseISO, isPast, isToday, addDays, startOfDay, endOfDay } from 'date-fns';
 import { fetchReservations, type Reservation } from './services/hospitable';
 import { supabase } from './supabase';
@@ -50,6 +50,10 @@ function App() {
   const [editingPrompt, setEditingPrompt] = useState<any>(null);
   const [selectedPromptId, setSelectedPromptId] = useState<string | null>(null);
 
+  // General Rules config
+  const [isGeneralConfigOpen, setIsGeneralConfigOpen] = useState(false);
+  const [generalRules, setGeneralRules] = useState('');
+
   // Contact Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddGuestOpen, setIsAddGuestOpen] = useState(false);
@@ -72,6 +76,7 @@ function App() {
   const [showSpanishTranscript, setShowSpanishTranscript] = useState(false);
   const [spanishTranscript, setSpanishTranscript] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
+  const [transcriptViewMode, setTranscriptViewMode] = useState<'summary' | 'full'>('summary');
 
   const [currentCallId, setCurrentCallId] = useState<string | null>(null);
   const [callDetails, setCallDetails] = useState<any>(null);
@@ -86,6 +91,7 @@ function App() {
     setSpanishTranscript('');
     setShowSpanishTranscript(false);
     setSelectedPromptId(null);
+    setTranscriptViewMode('summary');
   };
 
   const handleSavePrompt = async () => {
@@ -128,12 +134,27 @@ function App() {
     setPredefinedPrompts(prev => prev.filter(p => p.id !== id));
   };
 
+  const handleSaveGeneralRules = async () => {
+    const { data } = await supabase.from('house_rules').select('id').eq('property_name', 'GLOBAL_AGENT_CONFIG').maybeSingle();
+    if (data?.id) {
+      await supabase.from('house_rules').update({ rules_text: generalRules }).eq('id', data.id);
+    } else {
+      await supabase.from('house_rules').insert({ property_name: 'GLOBAL_AGENT_CONFIG', rules_text: generalRules });
+    }
+    alert('General rules saved to cloud successfully!');
+    setIsGeneralConfigOpen(false);
+  };
+
   const initiateCall = async () => {
     if (!phoneInput) return alert('Phone number is required');
     setIsCalling(true);
     
     try {
       let finalPrompt = englishPrompt;
+      if (generalRules) {
+        finalPrompt = `GENERAL INSTRUCTIONS:\n${generalRules}\n\nSPECIFIC CALL INSTRUCTIONS:\n${finalPrompt}`;
+      }
+
       if (selectedGuest?.property_name) {
         const propertyNumber = selectedGuest.property_name.split(' ')[0];
         const { data: ruleData } = await supabase.from('house_rules')
@@ -310,6 +331,13 @@ function App() {
     };
     fetchPrompts();
 
+    // Fetch General Agent Config
+    const fetchGeneralRules = async () => {
+      const { data } = await supabase.from('house_rules').select('rules_text').eq('property_name', 'GLOBAL_AGENT_CONFIG').maybeSingle();
+      if (data?.rules_text) setGeneralRules(data.rules_text);
+    };
+    fetchGeneralRules();
+
     return () => clearInterval(intervalId);
   }, []);
 
@@ -414,9 +442,14 @@ function App() {
               </div>
               Reservations
             </div>
-            <button onClick={() => setIsSettingsOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-              <Settings size={20} />
-            </button>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <button title="Predefined Calls" onClick={() => setIsSettingsOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <MessageSquare size={20} />
+              </button>
+              <button title="General Config" onClick={() => setIsGeneralConfigOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                <Settings size={20} />
+              </button>
+            </div>
           </div>
           <div className="search-bar">
             <Search size={16} color="var(--text-secondary)" />
@@ -644,35 +677,47 @@ function App() {
                   <span>Call Details</span>
                   <span className="call-status-badge">{callDetails.status}</span>
                 </div>
-                {callDetails.summary && (
-                  <div style={{ marginBottom: 10, color: 'var(--text-primary)' }}>
-                    <strong>Summary:</strong> {callDetails.summary}
-                  </div>
-                )}
-                {callDetails.transcript && (
+                {(callDetails.summary || callDetails.transcript) && (
                   <div style={{ marginTop: '10px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Live Transcript</span>
-                      {callDetails.status === 'ended' && !showSpanishTranscript && (
-                        <button 
-                          onClick={handleTranslateTranscript}
-                          disabled={isTranslating}
-                          style={{ background: 'none', border: 'none', color: 'var(--brand-color)', fontSize: '12px', cursor: 'pointer' }}
-                        >
-                          {isTranslating ? 'Translating...' : 'Translate to Spanish'}
-                        </button>
-                      )}
-                      {showSpanishTranscript && (
-                        <button 
-                          onClick={() => setShowSpanishTranscript(false)}
-                          style={{ background: 'none', border: 'none', color: 'var(--brand-color)', fontSize: '12px', cursor: 'pointer' }}
-                        >
-                          Show English
-                        </button>
-                      )}
+                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                        {transcriptViewMode === 'summary' && callDetails.summary ? 'Call Summary' : 'Live Transcript'}
+                      </span>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        {(callDetails.status === 'ended' || callDetails.status === 'completed') && transcriptViewMode === 'full' && (
+                          showSpanishTranscript ? (
+                            <button 
+                              onClick={() => setShowSpanishTranscript(false)}
+                              style={{ background: 'none', border: 'none', color: 'var(--brand-color)', fontSize: '12px', cursor: 'pointer' }}
+                            >
+                              Show English
+                            </button>
+                          ) : (
+                            <button 
+                              onClick={handleTranslateTranscript}
+                              disabled={isTranslating}
+                              style={{ background: 'none', border: 'none', color: 'var(--brand-color)', fontSize: '12px', cursor: 'pointer' }}
+                            >
+                              {isTranslating ? 'Translating...' : 'Translate to Spanish'}
+                            </button>
+                          )
+                        )}
+                        {callDetails.summary && (
+                          <button 
+                            onClick={() => setTranscriptViewMode(transcriptViewMode === 'summary' ? 'full' : 'summary')}
+                            style={{ background: 'none', border: 'none', color: 'var(--brand-color)', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+                          >
+                            {transcriptViewMode === 'summary' ? 'Show Full Transcript' : 'Show Summary'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="transcript-box">
-                      {showSpanishTranscript && spanishTranscript ? spanishTranscript : callDetails.transcript}
+                      {transcriptViewMode === 'summary' && callDetails.summary ? (
+                        callDetails.summary
+                      ) : (
+                        showSpanishTranscript && spanishTranscript ? spanishTranscript : callDetails.transcript
+                      )}
                     </div>
                   </div>
                 )}
@@ -736,7 +781,7 @@ function App() {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '600px' }}>
             <div className="modal-header">
-              <span>Settings: Predefined Prompts</span>
+              <span>Settings: Predefined Calls</span>
               <button className="modal-close" onClick={() => setIsSettingsOpen(false)}><X size={20}/></button>
             </div>
             
@@ -747,7 +792,7 @@ function App() {
                   onClick={() => setEditingPrompt({ title: '', description: '', prompt_text: '' })}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                 >
-                  <Plus size={16} /> Add New Prompt
+                  <Plus size={16} /> Add New Call
                 </button>
                 <div style={{ maxHeight: '400px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '10px' }}>
                   {predefinedPrompts.map(p => (
@@ -796,6 +841,33 @@ function App() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* General Settings Modal */}
+      {isGeneralConfigOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content" style={{ maxWidth: '600px' }}>
+            <div className="modal-header">
+              <span>Agent General Config</span>
+              <button className="modal-close" onClick={() => setIsGeneralConfigOpen(false)}><X size={20}/></button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className="form-group">
+                <label>General Rules for Voice Agent</label>
+                <textarea 
+                  value={generalRules}
+                  onChange={e => setGeneralRules(e.target.value)}
+                  placeholder="Enter universal instructions that apply to EVERY call (e.g., tone, constraints)..."
+                  style={{ minHeight: '200px' }}
+                />
+              </div>
+              <button className="btn-primary" onClick={handleSaveGeneralRules} style={{ marginTop: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                <Save size={16} /> Save Rules
+              </button>
+            </div>
           </div>
         </div>
       )}
