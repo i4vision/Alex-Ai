@@ -125,7 +125,7 @@ function App() {
     }
     setEditingPrompt(null);
     const { data } = await supabase.from('predefined_prompts').select('*').order('created_at', { ascending: true });
-    if (data) setPredefinedPrompts(data);
+    if (data) setPredefinedPrompts(data.filter((p: any) => p.title !== '__GLOBAL_AGENT_CONFIG__'));
   };
 
   const handleDeletePrompt = async (id: string) => {
@@ -135,12 +135,18 @@ function App() {
   };
 
   const handleSaveGeneralRules = async () => {
-    const { data } = await supabase.from('house_rules').select('id').eq('property_name', 'GLOBAL_AGENT_CONFIG').maybeSingle();
+    const { data } = await supabase.from('predefined_prompts').select('id').eq('title', '__GLOBAL_AGENT_CONFIG__').maybeSingle();
+    let errorObj = null;
     if (data?.id) {
-      await supabase.from('house_rules').update({ rules_text: generalRules }).eq('id', data.id);
+      const { error } = await supabase.from('predefined_prompts').update({ prompt_text: generalRules, description: 'System Config', english_prompt: '' }).eq('id', data.id);
+      errorObj = error;
     } else {
-      await supabase.from('house_rules').insert({ property_name: 'GLOBAL_AGENT_CONFIG', rules_text: generalRules });
+      const { error } = await supabase.from('predefined_prompts').insert({ title: '__GLOBAL_AGENT_CONFIG__', description: 'System Config', prompt_text: generalRules, english_prompt: '' });
+      errorObj = error;
     }
+    
+    if (errorObj) return alert('Error saving rules: ' + errorObj.message);
+
     alert('General rules saved to cloud successfully!');
     setIsGeneralConfigOpen(false);
   };
@@ -324,19 +330,16 @@ function App() {
     loadData();
     const intervalId = setInterval(loadData, 60000); // refresh every 60 seconds
     
-    // Fetch Global Prompts
+    // Fetch Global Prompts and Config
     const fetchPrompts = async () => {
       const { data } = await supabase.from('predefined_prompts').select('*').order('created_at', { ascending: true });
-      if (data) setPredefinedPrompts(data);
+      if (data) {
+        const globalConfig = data.find((p: any) => p.title === '__GLOBAL_AGENT_CONFIG__');
+        if (globalConfig) setGeneralRules(globalConfig.prompt_text || '');
+        setPredefinedPrompts(data.filter((p: any) => p.title !== '__GLOBAL_AGENT_CONFIG__'));
+      }
     };
     fetchPrompts();
-
-    // Fetch General Agent Config
-    const fetchGeneralRules = async () => {
-      const { data } = await supabase.from('house_rules').select('rules_text').eq('property_name', 'GLOBAL_AGENT_CONFIG').maybeSingle();
-      if (data?.rules_text) setGeneralRules(data.rules_text);
-    };
-    fetchGeneralRules();
 
     return () => clearInterval(intervalId);
   }, []);
