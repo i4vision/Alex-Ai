@@ -58,6 +58,13 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAddGuestOpen, setIsAddGuestOpen] = useState(false);
   
+  // Edit Guest States
+  const [isEditGuestOpen, setIsEditGuestOpen] = useState(false);
+  const [editingGuestId, setEditingGuestId] = useState('');
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+
   // New Guest Form States
   const [newGuestFirst, setNewGuestFirst] = useState('');
   const [newGuestLast, setNewGuestLast] = useState('');
@@ -279,6 +286,40 @@ function App() {
     }
   }, [callDetails?.status]);
 
+  const openEditGuestModal = () => {
+    if (!activeGuest) return;
+    setEditingGuestId(activeGuest.guest.id);
+    setEditFirstName(activeGuest.guest.first_name);
+    setEditLastName(activeGuest.guest.last_name);
+    setEditPhone(activeGuest.guest.phone_number || '');
+    setIsEditGuestOpen(true);
+  };
+
+  const handleSaveGuestEdit = async () => {
+    if (!editFirstName) return alert("First name is required");
+    
+    // Optimistic UI Update: update activeGuest immediately
+    const updatedGuest = { ...activeGuest!.guest, first_name: editFirstName, last_name: editLastName, phone_number: editPhone };
+    setActiveGuest({ ...activeGuest!, guest: updatedGuest });
+    
+    // Also update reservations list in memory
+    setReservations(prev => prev.map(r => r.guest.id === editingGuestId ? { ...r, guest: updatedGuest } : r));
+    
+    setIsEditGuestOpen(false);
+
+    const { error } = await supabase.from('guests').upsert({
+      id: editingGuestId,
+      first_name: editFirstName,
+      last_name: editLastName,
+      phone_number: editPhone,
+      picture_url: updatedGuest.picture_url,
+      property_name: activeGuest!.property_name || '',
+      updated_at: new Date().toISOString()
+    });
+
+    if (error) alert("Error saving guest to cloud: " + error.message);
+  };
+
   const handleSaveManualGuest = () => {
     if (!newGuestFirst || !newGuestPhone) return alert('First Name and Phone are required.');
 
@@ -319,8 +360,26 @@ function App() {
       try {
         const data = await fetchReservations();
         
+        // Fetch Supabase Guest overrides
+        const { data: dbGuests } = await supabase.from('guests').select('*');
+        const dbGuestsMap = new Map((dbGuests || []).map(g => [g.id, g]));
+
         // Map Hospitable API data structure correctly based on what they actually return
         const mappedData = data.map((item: any) => {
+          let guestId = item.guest?.id || item.guest_id || 'guest';
+          let firstName = (item.guest?.first_name || item.guest_first_name || 'Guest').replace(/^\s+|\s+$/g, '');
+          let lastName = (item.guest?.last_name || item.guest_last_name || '').replace(/^\s+|\s+$/g, '');
+          let pictureUrl = item.guest?.profile_picture || item.guest?.picture_url || item.guest_picture_url || '';
+          let phone = item.guest?.phone_numbers?.[0] || item.guest?.phone || item.guest?.phone_number || item.guest_phone || '';
+
+          if (dbGuestsMap.has(guestId)) {
+             const override = dbGuestsMap.get(guestId);
+             firstName = override.first_name || firstName;
+             lastName = override.last_name || lastName;
+             phone = override.phone_number || phone;
+             pictureUrl = override.picture_url || pictureUrl;
+          }
+
           return {
             id: item.id || Math.random().toString(),
             code: item.code || 'N/A',
@@ -329,11 +388,11 @@ function App() {
             status: item.status || 'unknown',
             property_name: item.injected_property_name || '',
             guest: {
-              id: item.guest?.id || item.guest_id || 'guest',
-              first_name: (item.guest?.first_name || item.guest_first_name || 'Guest').replace(/^\s+|\s+$/g, ''),
-              last_name: (item.guest?.last_name || item.guest_last_name || '').replace(/^\s+|\s+$/g, ''),
-              picture_url: item.guest?.profile_picture || item.guest?.picture_url || item.guest_picture_url || '',
-              phone_number: item.guest?.phone_numbers?.[0] || item.guest?.phone || item.guest?.phone_number || item.guest_phone || '',
+              id: guestId,
+              first_name: firstName,
+              last_name: lastName,
+              picture_url: pictureUrl,
+              phone_number: phone,
             }
           };
         });
@@ -495,7 +554,7 @@ function App() {
               <option value="custom">Custom Range</option>
             </select>
             <select value={propertyFilter} onChange={e => setPropertyFilter(e.target.value)} className="date-select" style={{ marginLeft: '8px', flexShrink: 0 }}>
-              <option value="all">All Houses</option>
+              <option value="all">All Properties</option>
               {uniqueProperties.map(p => (
                 <option key={p} value={p}>{p.split(' ')[0]}</option>
               ))}
@@ -571,7 +630,12 @@ function App() {
                 {!activeGuest.guest.picture_url && getInitials(activeGuest.guest.first_name, activeGuest.guest.last_name)}
               </div>
               <div className="guest-profile-info">
-                <h2>{activeGuest.guest.first_name} {activeGuest.guest.last_name}</h2>
+                <h2 style={{ display: 'flex', alignItems: 'center' }}>
+                  {activeGuest.guest.first_name} {activeGuest.guest.last_name}
+                  <button onClick={openEditGuestModal} style={{ background: 'none', border: 'none', marginLeft: '10px', cursor: 'pointer', color: 'var(--brand-color)', padding: 0, display: 'flex' }}>
+                     <Edit2 size={16} />
+                  </button>
+                </h2>
                 <div className="guest-meta">
                   <span><Phone size={14} color="var(--brand-color)"/> {activeGuest.guest.phone_number || 'No phone'}</span>
                   <span><CalendarCheck2 size={14}/> {formatDateRange(activeGuest.start_date, activeGuest.end_date)}</span>
@@ -753,6 +817,38 @@ function App() {
         </div>
       )}
 
+      {/* Edit Guest Modal */}
+      {isEditGuestOpen && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <span>Edit Guest Profile</span>
+              <button className="modal-close" onClick={() => setIsEditGuestOpen(false)}><X size={20}/></button>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="form-group">
+                <label>First Name</label>
+                <input type="text" value={editFirstName} onChange={e => setEditFirstName(e.target.value)} placeholder="John" />
+              </div>
+              <div className="form-group">
+                <label>Last Name</label>
+                <input type="text" value={editLastName} onChange={e => setEditLastName(e.target.value)} placeholder="Doe" />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>Phone Number</label>
+              <input type="text" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="+1234567890" />
+            </div>
+
+            <button className="btn-primary" onClick={handleSaveGuestEdit} style={{ marginTop: '10px' }}>
+              Save Changes
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Add Specific Guest Modal */}
       {isAddGuestOpen && (
         <div className="modal-overlay">
@@ -779,8 +875,8 @@ function App() {
                 <input type="text" value={newGuestPhone} onChange={e => setNewGuestPhone(e.target.value)} placeholder="+1234567890" />
               </div>
               <div className="form-group">
-                <label>Property (House Number)</label>
-                <input type="text" value={newGuestProperty} onChange={e => setNewGuestProperty(e.target.value)} placeholder="101" />
+                <label>Property Name</label>
+                <input type="text" value={newGuestProperty} onChange={e => setNewGuestProperty(e.target.value)} placeholder="Ej. Casa Azul" />
               </div>
             </div>
             
