@@ -156,6 +156,7 @@ function App() {
   const initiateCall = async () => {
     if (!phoneInput) return alert('Phone number is required');
     setIsCalling(true);
+    setTranscriptViewMode('full');
     
     try {
       let finalPrompt = englishPrompt;
@@ -271,6 +272,12 @@ function App() {
     // Cleanup if component unmounts
     return () => clearInterval(interval);
   };
+
+  useEffect(() => {
+    if (callDetails && (callDetails.status === 'ended' || callDetails.status === 'completed')) {
+      setTranscriptViewMode('summary');
+    }
+  }, [callDetails?.status]);
 
   const handleSaveManualGuest = () => {
     if (!newGuestFirst || !newGuestPhone) return alert('First Name and Phone are required.');
@@ -731,9 +738,9 @@ function App() {
                     </div>
                     <div className="transcript-box">
                       {transcriptViewMode === 'summary' ? (
-                         callDetails.summary ? (showSpanishTranscript && spanishSummary ? spanishSummary : callDetails.summary) : ((callDetails.status === 'ended' || callDetails.status === 'completed') ? 'Sin resumen disponible.' : 'Generando resumen al finalizar la llamada...')
+                         callDetails.summary ? (showSpanishTranscript && spanishSummary ? spanishSummary : callDetails.summary) : ((callDetails.status === 'ended' || callDetails.status === 'completed') ? 'Generando resumen final con Inteligencia Artificial...' : 'La llamada está activa. Revisa la Transcripción Completa para supervisar la conversación en vivo.')
                       ) : (
-                        showSpanishTranscript && spanishTranscript ? spanishTranscript : callDetails.transcript
+                        showSpanishTranscript && spanishTranscript ? spanishTranscript : (callDetails.transcript || 'Iniciando conexión...')
                       )}
                     </div>
                   </div>
