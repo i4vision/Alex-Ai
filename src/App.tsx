@@ -700,7 +700,8 @@ function App() {
                   <span className="call-status-badge">
                     {callDetails.status === 'queued' ? 'En Cola' : 
                      callDetails.status === 'in-progress' ? 'En Curso' : 
-                     (callDetails.status === 'ended' || callDetails.status === 'completed') ? 'Finalizada' : callDetails.status}
+                     (callDetails.status === 'ended' || callDetails.status === 'completed') ? 'Finalizada' : 
+                     callDetails.status === 'failed' ? 'Fallida' : callDetails.status}
                   </span>
                 </div>
                 {(callDetails.summary || callDetails.transcript || true) && (
@@ -738,7 +739,8 @@ function App() {
                     </div>
                     <div className="transcript-box">
                       {transcriptViewMode === 'summary' ? (
-                         callDetails.summary ? (showSpanishTranscript && spanishSummary ? spanishSummary : callDetails.summary) : ((callDetails.status === 'ended' || callDetails.status === 'completed') ? 'Generando resumen final con Inteligencia Artificial...' : 'La llamada está activa. Revisa la Transcripción Completa para supervisar la conversación en vivo.')
+                         callDetails.status === 'failed' ? (callDetails.summary || 'La llamada falló debido a un error del proveedor de voz.') : 
+                         (callDetails.summary ? (showSpanishTranscript && spanishSummary ? spanishSummary : callDetails.summary) : ((callDetails.status === 'ended' || callDetails.status === 'completed') ? 'Generando resumen final con Inteligencia Artificial...' : 'La llamada está activa. Revisa la Transcripción Completa para supervisar la conversación en vivo.'))
                       ) : (
                         showSpanishTranscript && spanishTranscript ? spanishTranscript : (callDetails.transcript || 'Iniciando conexión...')
                       )}

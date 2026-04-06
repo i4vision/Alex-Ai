@@ -182,7 +182,18 @@ app.get('/api/calls/:callId', async (req, res) => {
       { headers: { Authorization: `Bearer ${VAPI_PRIVATE_KEY}` } }
     );
     
+    
     const callData = vapiRes.data;
+    
+    // Patch buggy Vapi API states: if it has an endedReason, the call is dead regardless of status
+    if (callData.endedReason && callData.status === 'in-progress') {
+       if (callData.endedReason === 'Unknown' || callData.endedReason.toLowerCase().includes('failed') || callData.endedReason.toLowerCase().includes('error')) {
+          callData.status = 'failed';
+       } else {
+          callData.status = 'ended';
+       }
+    }
+    console.log(`POLL VAPI: Call ${callId} status is raw text: [${callData.status}], endedReason: [${callData.endedReason}]`);
     
     // Merge Vapi's live data with our local guest tracking
     if (callsDatabase[callId]) {
@@ -192,29 +203,33 @@ app.get('/api/calls/:callId', async (req, res) => {
       
       if (callData.summary) {
         callsDatabase[callId].summary = callData.summary;
-      } else if (!callsDatabase[callId].summary && (callData.status === 'ended' || callData.status === 'completed') && callData.transcript && !callsDatabase[callId].generatingSummary) {
-        callsDatabase[callId].generatingSummary = true;
-        if (openai) {
-          openai.chat.completions.create({
-            model: 'gpt-4o-mini',
-            messages: [{ 
-              role: 'system', 
-              content: 'Eres un supervisor de recepción. Resume muy brevemente la siguiente transcripción de una llamada con un huésped. Resalta si solicitaron algo (toallas, limpieza, dudas) o si simplemente están disfrutando su estancia. Usa siempre español. Máximo 2 oraciones.' 
-            }, { 
-              role: 'user', 
-              content: callData.transcript 
-            }]
-          }).then(aiRes => {
-            callsDatabase[callId].summary = aiRes.choices[0].message.content;
-            callsDatabase[callId].generatingSummary = false;
-          }).catch(err => {
-            console.error('Auto Summary Error:', err.message);
-            callsDatabase[callId].summary = "Error de red al generar resumen automático.";
-            callsDatabase[callId].generatingSummary = false;
-          });
+      } else if (!callsDatabase[callId].summary && (callData.status === 'ended' || callData.status === 'completed' || callData.status === 'failed') && !callsDatabase[callId].generatingSummary) {
+        if (!callData.transcript || callData.transcript.trim() === '') {
+          callsDatabase[callId].summary = "Sin conversación registrada (posiblemente la llamada falló o fue rechazada).";
         } else {
-          callsDatabase[callId].summary = "Resumen no configurado (OpenAI falso).";
-          callsDatabase[callId].generatingSummary = false;
+          callsDatabase[callId].generatingSummary = true;
+          if (openai) {
+            openai.chat.completions.create({
+              model: 'gpt-4o-mini',
+              messages: [{ 
+                role: 'system', 
+                content: 'Eres un supervisor de recepción. Resume muy brevemente la siguiente transcripción de una llamada con un huésped. Resalta si solicitaron algo (toallas, limpieza, dudas) o si simplemente están disfrutando su estancia. Usa siempre español. Máximo 2 oraciones.' 
+              }, { 
+                role: 'user', 
+                content: callData.transcript 
+              }]
+            }).then(aiRes => {
+              callsDatabase[callId].summary = aiRes.choices[0].message.content;
+              callsDatabase[callId].generatingSummary = false;
+            }).catch(err => {
+              console.error('Auto Summary Error:', err.message);
+              callsDatabase[callId].summary = "Error de red al generar resumen automático.";
+              callsDatabase[callId].generatingSummary = false;
+            });
+          } else {
+            callsDatabase[callId].summary = "Resumen no configurado (OpenAI falso).";
+            callsDatabase[callId].generatingSummary = false;
+          }
         }
       }
 
@@ -225,6 +240,10 @@ app.get('/api/calls/:callId', async (req, res) => {
   } catch (error) {
     console.error('Error polling Vapi:', error.message);
     if (callsDatabase[callId]) {
+      if (error.response && error.response.status === 404) {
+        callsDatabase[callId].status = 'failed';
+        callsDatabase[callId].summary = "Llamada fallida. El proveedor de voz (Vapi/Twilio) no pudo establecer la conexión.";
+      }
       return res.json(callsDatabase[callId]);
     }
     return res.status(404).json({ error: 'Call not found' });
