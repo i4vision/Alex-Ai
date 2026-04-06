@@ -698,7 +698,7 @@ function App() {
                 </div>
                 {(callDetails.summary || callDetails.transcript || true) && (
                   <div style={{ marginTop: '10px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', width: '100%', flexWrap: 'wrap', gap: '8px' }}>
                       <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
                         {transcriptViewMode === 'summary' ? 'Resumen de la Llamada' : 'Transcripción en Vivo'}
                       </span>

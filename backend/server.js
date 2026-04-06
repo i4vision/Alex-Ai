@@ -188,8 +188,30 @@ app.get('/api/calls/:callId', async (req, res) => {
     if (callsDatabase[callId]) {
       callsDatabase[callId].status = callData.status;
       callsDatabase[callId].transcript = callData.transcript;
-      callsDatabase[callId].summary = callData.summary;
       callsDatabase[callId].recordingUrl = callData.recordingUrl;
+      
+      if (callData.summary) {
+        callsDatabase[callId].summary = callData.summary;
+      } else if (!callsDatabase[callId].summary && (callData.status === 'ended' || callData.status === 'completed') && callData.transcript && !callsDatabase[callId].generatingSummary) {
+        callsDatabase[callId].generatingSummary = true;
+        if (openai) {
+          openai.chat.completions.create({
+            model: 'gpt-4o-mini',
+            messages: [{ 
+              role: 'system', 
+              content: 'Eres un supervisor de recepción. Resume muy brevemente la siguiente transcripción de una llamada con un huésped. Resalta si solicitaron algo (toallas, limpieza, dudas) o si simplemente están disfrutando su estancia. Usa siempre español. Máximo 2 oraciones.' 
+            }, { 
+              role: 'user', 
+              content: callData.transcript 
+            }]
+          }).then(aiRes => {
+            callsDatabase[callId].summary = aiRes.choices[0].message.content;
+          }).catch(err => console.error('Auto Summary Error:', err.message));
+        } else {
+          callsDatabase[callId].summary = "Resumen no configurado (OpenAI falso).";
+        }
+      }
+
       return res.json(callsDatabase[callId]);
     }
     
