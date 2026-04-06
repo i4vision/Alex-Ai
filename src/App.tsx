@@ -809,6 +809,14 @@ function App() {
                         showSpanishTranscript && spanishTranscript ? spanishTranscript : (callDetails.transcript || 'Iniciando conexión...')
                       )}
                     </div>
+                    {callDetails.recordingUrl && (
+                       <div style={{ marginTop: '12px', padding: '12px', backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                         <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: 600 }}>▶️ Grabación de Audio</div>
+                         <audio controls style={{ width: '100%', height: '36px', outline: 'none' }}>
+                           <source src={callDetails.recordingUrl} type="audio/wav" />
+                         </audio>
+                       </div>
+                    )}
                   </div>
                 )}
               </div>
