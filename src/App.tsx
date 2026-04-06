@@ -75,6 +75,7 @@ function App() {
   // Transcript Translation States
   const [showSpanishTranscript, setShowSpanishTranscript] = useState(false);
   const [spanishTranscript, setSpanishTranscript] = useState('');
+  const [spanishSummary, setSpanishSummary] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [transcriptViewMode, setTranscriptViewMode] = useState<'summary' | 'full'>('summary');
 
@@ -89,6 +90,7 @@ function App() {
     setSpanishPrompt('');
     setEnglishPrompt('');
     setSpanishTranscript('');
+    setSpanishSummary('');
     setShowSpanishTranscript(false);
     setSelectedPromptId(null);
     setTranscriptViewMode('summary');
@@ -222,19 +224,29 @@ function App() {
   };
 
   const handleTranslateTranscript = async () => {
-    if (!callDetails?.transcript) return;
     setIsTranslating(true);
     try {
-      const res = await fetch('/api/translate-text', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: callDetails.transcript })
-      });
-      const data = await res.json();
-      setSpanishTranscript(data.translatedText);
+      if (callDetails?.transcript) {
+        const res = await fetch('/api/translate-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: callDetails.transcript })
+        });
+        const data = await res.json();
+        setSpanishTranscript(data.translatedText);
+      }
+      if (callDetails?.summary) {
+        const res2 = await fetch('/api/translate-text', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: callDetails.summary })
+        });
+        const data2 = await res2.json();
+        if (data2.translatedText) setSpanishSummary(data2.translatedText);
+      }
       setShowSpanishTranscript(true);
     } catch (e) {
-      alert("Translation failed");
+      alert("Error de traducción");
     } finally {
       setIsTranslating(false);
     }
@@ -677,23 +689,27 @@ function App() {
             {callDetails && (
               <div className="call-status-box">
                 <div className="call-status-header">
-                  <span>Call Details</span>
-                  <span className="call-status-badge">{callDetails.status}</span>
+                  <span>Detalles de la Llamada</span>
+                  <span className="call-status-badge">
+                    {callDetails.status === 'queued' ? 'En Cola' : 
+                     callDetails.status === 'in-progress' ? 'En Curso' : 
+                     (callDetails.status === 'ended' || callDetails.status === 'completed') ? 'Finalizada' : callDetails.status}
+                  </span>
                 </div>
-                {(callDetails.summary || callDetails.transcript) && (
+                {(callDetails.summary || callDetails.transcript || true) && (
                   <div style={{ marginTop: '10px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                       <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {transcriptViewMode === 'summary' && callDetails.summary ? 'Call Summary' : 'Live Transcript'}
+                        {transcriptViewMode === 'summary' ? 'Resumen de la Llamada' : 'Transcripción en Vivo'}
                       </span>
                       <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                        {(callDetails.status === 'ended' || callDetails.status === 'completed') && transcriptViewMode === 'full' && (
+                        {(callDetails.status === 'ended' || callDetails.status === 'completed') && (
                           showSpanishTranscript ? (
                             <button 
                               onClick={() => setShowSpanishTranscript(false)}
                               style={{ background: 'none', border: 'none', color: 'var(--brand-color)', fontSize: '12px', cursor: 'pointer' }}
                             >
-                              Show English
+                              Ver Original (Inglés)
                             </button>
                           ) : (
                             <button 
@@ -701,23 +717,21 @@ function App() {
                               disabled={isTranslating}
                               style={{ background: 'none', border: 'none', color: 'var(--brand-color)', fontSize: '12px', cursor: 'pointer' }}
                             >
-                              {isTranslating ? 'Translating...' : 'Translate to Spanish'}
+                              {isTranslating ? 'Traduciendo...' : 'Traducir al Español'}
                             </button>
                           )
                         )}
-                        {callDetails.summary && (
-                          <button 
-                            onClick={() => setTranscriptViewMode(transcriptViewMode === 'summary' ? 'full' : 'summary')}
-                            style={{ background: 'none', border: 'none', color: 'var(--brand-color)', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
-                          >
-                            {transcriptViewMode === 'summary' ? 'Show Full Transcript' : 'Show Summary'}
-                          </button>
-                        )}
+                        <button 
+                          onClick={() => setTranscriptViewMode(transcriptViewMode === 'summary' ? 'full' : 'summary')}
+                          style={{ background: 'none', border: 'none', color: 'var(--brand-color)', fontSize: '12px', cursor: 'pointer', fontWeight: 600 }}
+                        >
+                          {transcriptViewMode === 'summary' ? 'Ver Transcripción Completa' : 'Volver al Resumen'}
+                        </button>
                       </div>
                     </div>
                     <div className="transcript-box">
-                      {transcriptViewMode === 'summary' && callDetails.summary ? (
-                        callDetails.summary
+                      {transcriptViewMode === 'summary' ? (
+                         callDetails.summary ? (showSpanishTranscript && spanishSummary ? spanishSummary : callDetails.summary) : ((callDetails.status === 'ended' || callDetails.status === 'completed') ? 'Sin resumen disponible.' : 'Generando resumen al finalizar la llamada...')
                       ) : (
                         showSpanishTranscript && spanishTranscript ? spanishTranscript : callDetails.transcript
                       )}
