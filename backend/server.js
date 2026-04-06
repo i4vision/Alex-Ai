@@ -206,9 +206,15 @@ app.get('/api/calls/:callId', async (req, res) => {
             }]
           }).then(aiRes => {
             callsDatabase[callId].summary = aiRes.choices[0].message.content;
-          }).catch(err => console.error('Auto Summary Error:', err.message));
+            callsDatabase[callId].generatingSummary = false;
+          }).catch(err => {
+            console.error('Auto Summary Error:', err.message);
+            callsDatabase[callId].summary = "Error de red al generar resumen automático.";
+            callsDatabase[callId].generatingSummary = false;
+          });
         } else {
           callsDatabase[callId].summary = "Resumen no configurado (OpenAI falso).";
+          callsDatabase[callId].generatingSummary = false;
         }
       }
 

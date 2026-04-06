@@ -260,7 +260,7 @@ function App() {
         if (response.ok) {
           const data = await response.json();
           setCallDetails(data);
-          if (data.status === 'completed' || data.status === 'ended' || data.status === 'failed') {
+          if ((data.status === 'completed' || data.status === 'ended' || data.status === 'failed') && !data.generatingSummary) {
             clearInterval(interval);
           }
         }
