@@ -668,7 +668,7 @@ function App() {
                   <span>
                     <Info size={14}/> 
                     <a 
-                      href={`https://my.hospitable.com/reservations/${activeGuest.id}`} 
+                      href={`https://www.airbnb.com/hosting/stay/${activeGuest.code}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
                       style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px', marginLeft: '4px' }}
