@@ -36,11 +36,14 @@ app.post('/api/calls', async (req, res) => {
   }
 
   try {
+    // Vapi requires strictly E.164 (+11112223333). Strip the formatted spaces/parentheses.
+    const e164Phone = '+' + guestPhone.replace(/\D/g, '');
+
     const payload = {
       assistantId: VAPI_ASSISTANT_ID,
       phoneNumberId: VAPI_PHONE_NUMBER_ID,
       customer: {
-        number: guestPhone,
+        number: e164Phone,
         name: guestName || 'Guest'
       }
     };

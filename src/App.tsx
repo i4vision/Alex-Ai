@@ -665,7 +665,17 @@ function App() {
                 <div className="guest-meta">
                   <span><Phone size={14} color="var(--brand-color)"/> {activeGuest.guest.phone_number || 'No phone'}</span>
                   <span><CalendarCheck2 size={14}/> {formatDateRange(activeGuest.start_date, activeGuest.end_date)}</span>
-                  <span><Info size={14}/> {activeGuest.code || 'No code'}</span>
+                  <span>
+                    <Info size={14}/> 
+                    <a 
+                      href={`https://my.hospitable.com/reservations/${activeGuest.id}`} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px', marginLeft: '4px' }}
+                    >
+                      {activeGuest.code || activeGuest.id}
+                    </a>
+                  </span>
                   <div className="guest-status-small" title={getStatusIcon(activeGuest.start_date, activeGuest.end_date).text}>
                     {getStatusIcon(activeGuest.start_date, activeGuest.end_date).icon}
                   </div>
