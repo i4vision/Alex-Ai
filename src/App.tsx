@@ -20,7 +20,14 @@ const formatDateRange = (start: string, end: string) => {
 
 const formatPhoneNumber = (phone: string) => {
   if (!phone) return '';
-  const digits = phone.replace(/\D/g, '');
+  const cleanStr = phone.trim();
+  
+  // Safely identify and return explicitly formatted international country codes untouched
+  if (cleanStr.startsWith('+') && !cleanStr.startsWith('+1')) {
+    return '+' + cleanStr.replace(/\D/g, '');
+  }
+
+  const digits = cleanStr.replace(/\D/g, '');
   let nationalNumber = digits;
   
   if (digits.length === 11 && digits.startsWith('1')) {
@@ -33,7 +40,12 @@ const formatPhoneNumber = (phone: string) => {
     return `+1 (${nationalNumber.substring(0,3)}) ${nationalNumber.substring(3,6)}-${nationalNumber.substring(6)}`;
   }
   
-  return '+1 ' + phone; // fallback to append +1 arbitrarily if not 10 digits as requested
+  // Fallback: only prepend +1 if there's no plus sign indicator at all
+  if (!cleanStr.startsWith('+')) {
+    return '+1 ' + cleanStr;
+  }
+  
+  return cleanStr;
 };
 
 const getStatusIcon = (start: string, end: string) => {
@@ -106,6 +118,20 @@ function App() {
 
   const [currentCallId, setCurrentCallId] = useState<string | null>(null);
   const [callDetails, setCallDetails] = useState<any>(null);
+  const [callHistory, setCallHistory] = useState<any[]>([]);
+
+  const fetchCallHistory = async (guestId: string) => {
+    const { data } = await supabase.from('call_logs').select('*').eq('guest_id', guestId).order('created_at', { ascending: false });
+    if (data) setCallHistory(data);
+  };
+
+  useEffect(() => {
+    if (activeGuest) {
+      fetchCallHistory(activeGuest.guest.id);
+    } else {
+      setCallHistory([]);
+    }
+  }, [activeGuest]);
 
   const closeContactModal = () => {
     setIsModalOpen(false);
@@ -287,6 +313,21 @@ function App() {
           setCallDetails(data);
           if ((data.status === 'completed' || data.status === 'ended' || data.status === 'failed') && !data.generatingSummary) {
             clearInterval(interval);
+            
+            if (data.guestId) {
+               supabase.from('call_logs').upsert({
+                 vapi_call_id: callId,
+                 guest_id: data.guestId,
+                 guest_name: data.guestName || '',
+                 property_name: activeGuest?.property_name || '',
+                 summary: data.summary || '',
+                 transcript: data.transcript || '',
+                 recording_url: data.recordingUrl || '',
+                 status: data.status
+               }, { onConflict: 'vapi_call_id' }).then(() => {
+                  fetchCallHistory(data.guestId);
+               });
+            }
           }
         }
       } catch (e) {
@@ -553,7 +594,7 @@ function App() {
               <button title="Predefined Calls" onClick={() => setIsSettingsOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <MessageSquare size={20} />
               </button>
-              <button title="General Config" onClick={() => setIsGeneralConfigOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+              <button title="Settings" onClick={() => setIsGeneralConfigOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
                 <Settings size={20} />
               </button>
             </div>
@@ -570,14 +611,10 @@ function App() {
 
           <div className="filter-row">
             <select value={dateFilter} onChange={e => setDateFilter(e.target.value as any)} className="date-select">
-              <option value="all">Upcoming & Active</option>
-              <option value="7">Next 7 Days</option>
-              <option value="30">Next 30 Days</option>
-              <option value="60">Next 60 Days</option>
-              <option value="-7">Past 7 Days</option>
-              <option value="-30">Past 30 Days</option>
-              <option value="-60">Past 60 Days</option>
-              <option value="custom">Custom Range</option>
+              <option value="all">Active & Upcoming</option>
+              <option value="30">Next 30 days</option>
+              <option value="-30">Last 30 days</option>
+              <option value="custom">Custom</option>
             </select>
             <select value={propertyFilter} onChange={e => setPropertyFilter(e.target.value)} className="date-select" style={{ marginLeft: '8px', flexShrink: 0 }}>
               <option value="all">All Properties</option>
@@ -717,6 +754,36 @@ function App() {
                 <div className="prompt-desc">Escribe tus propias instrucciones.</div>
               </div>
             </div>
+
+            <div className="main-header" style={{ alignSelf: 'flex-start', marginLeft: 'max(0px, calc((100% - 900px) / 2))', marginTop: '30px', marginBottom: '16px' }}>
+              Historial de Llamadas ({callHistory.length})
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '900px' }}>
+               {callHistory.length === 0 ? (
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontStyle: 'italic', paddingLeft: 'min(0px, calc((100% - 900px) / 2))' }}>No hay llamadas previas para este huésped.</div>
+               ) : (
+                  callHistory.map(log => (
+                     <div key={log.id} style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}><CalendarCheck2 size={14}/> {new Date(log.created_at).toLocaleString()}</span>
+                          <span className="guest-status-badge">{log.status === 'ended' || log.status === 'completed' ? 'Finalizada' : log.status === 'failed' ? 'Fallida' : log.status}</span>
+                       </div>
+                       <div style={{ fontSize: '14px', marginBottom: '16px', lineHeight: 1.5, color: '#eee' }}>{log.summary || 'Sin resumen disponible.'}</div>
+                       <details style={{ fontSize: '13px', cursor: 'pointer' }}>
+                         <summary style={{ color: 'var(--brand-color)', outline: 'none', fontWeight: 600 }}>Ver Transcripción en vivo y Audio</summary>
+                         <div className="transcript-box" style={{ marginTop: '12px', whiteSpace: 'pre-wrap' }}>
+                           {(log.transcript || 'No se registró transcripción.')
+                             .replace(/AI:?/gi, 'Katia:')
+                             .replace(/User:?/gi, `${log.guest_name || 'Guest'}:`)}
+                         </div>
+                         {log.recording_url && (
+                           <audio controls src={log.recording_url} style={{ width: '100%', height: '40px', marginTop: '16px', outline: 'none', borderRadius: '6px' }}></audio>
+                         )}
+                       </details>
+                     </div>
+                  ))
+               )}
+            </div>
           </>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)', fontSize: 16 }}>
@@ -845,7 +912,9 @@ function App() {
                          callDetails.status === 'failed' ? (callDetails.summary || 'La llamada falló debido a un error del proveedor de voz.') : 
                          (callDetails.summary ? (showSpanishTranscript && spanishSummary ? spanishSummary : callDetails.summary) : ((callDetails.status === 'ended' || callDetails.status === 'completed') ? 'Generando resumen final con Inteligencia Artificial...' : 'La llamada está activa. Revisa la Transcripción Completa para supervisar la conversación en vivo.'))
                       ) : (
-                        showSpanishTranscript && spanishTranscript ? spanishTranscript : (callDetails.transcript || 'Iniciando conexión...')
+                        (showSpanishTranscript && spanishTranscript ? spanishTranscript : (callDetails.transcript || 'Iniciando conexión...'))
+                          .replace(/AI:?/gi, 'Katia:')
+                          .replace(/User:?/gi, `${activeGuest?.guest.first_name || 'Guest'}:`)
                       )}
                     </div>
                     {callDetails.recordingUrl && (
@@ -1019,7 +1088,7 @@ function App() {
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '600px' }}>
             <div className="modal-header">
-              <span>Agent General Config</span>
+              <span>Settings</span>
               <button className="modal-close" onClick={() => setIsGeneralConfigOpen(false)}><X size={20}/></button>
             </div>
             
