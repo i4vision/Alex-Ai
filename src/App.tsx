@@ -457,8 +457,19 @@ function App() {
             }
           };
         });
-        
-        const localData = JSON.parse(localStorage.getItem('manualGuests') || '[]');
+        let localData = JSON.parse(localStorage.getItem('manualGuests') || '[]');
+        localData = localData.map((item: any) => {
+          let guestId = item.guest?.id;
+          if (guestId && dbGuestsMap.has(guestId)) {
+             const override = dbGuestsMap.get(guestId);
+             item.guest.first_name = override.first_name || item.guest.first_name;
+             item.guest.last_name = override.last_name || item.guest.last_name;
+             item.guest.phone_number = override.phone_number || item.guest.phone_number;
+             item.guest.picture_url = override.picture_url || item.guest.picture_url;
+          }
+          return item;
+        });
+
         setReservations([...localData, ...mappedData]);
       } catch (e) {
         console.error("Failed to map reservations", e);
