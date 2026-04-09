@@ -20,32 +20,24 @@ const formatDateRange = (start: string, end: string) => {
 
 const formatPhoneNumber = (phone: string) => {
   if (!phone) return '';
-  const cleanStr = phone.trim();
   
-  // Safely identify and return explicitly formatted international country codes untouched
-  if (cleanStr.startsWith('+') && !cleanStr.startsWith('+1')) {
-    return '+' + cleanStr.replace(/\D/g, '');
-  }
-
-  const digits = cleanStr.replace(/\D/g, '');
-  let nationalNumber = digits;
+  // Strip all non-digit characters
+  const digits = phone.replace(/\D/g, '');
   
-  if (digits.length === 11 && digits.startsWith('1')) {
-    nationalNumber = digits.substring(1);
-  } else if (digits.length > 11) {
-    return '+' + digits; 
-  }
+  // If the number is incredibly short, return original string unformatted
+  if (digits.length < 10) return phone.trim();
   
-  if (nationalNumber.length === 10) {
-    return `+1 (${nationalNumber.substring(0,3)}) ${nationalNumber.substring(3,6)}-${nationalNumber.substring(6)}`;
+  // Per user explicit request, unconditionally format the last 10 digits as the primary layout
+  // and funnel any preceding overflow digits squarely into the country code (+XX) slot.
+  const local = digits.slice(-10);
+  let cc = digits.slice(0, -10);
+  
+  // Default to US +1 if no external country code overflow exists
+  if (!cc) {
+    cc = '1';
   }
   
-  // Fallback: only prepend +1 if there's no plus sign indicator at all
-  if (!cleanStr.startsWith('+')) {
-    return '+1 ' + cleanStr;
-  }
-  
-  return cleanStr;
+  return `+${cc} (${local.substring(0,3)}) ${local.substring(3,6)}-${local.substring(6)}`;
 };
 
 const getStatusIcon = (start: string, end: string) => {
@@ -86,6 +78,7 @@ function App() {
 
   // Contact Modal States
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isAddGuestOpen, setIsAddGuestOpen] = useState(false);
   
   // Edit Guest States
@@ -716,13 +709,15 @@ function App() {
                 <div className="guest-meta">
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><img src="/icons/phone-call.svg" style={{ width: 14 }} alt="Phone" /> {activeGuest.guest.phone_number || 'No phone'}</span>
                   <span><CalendarCheck2 size={14}/> {formatDateRange(activeGuest.start_date, activeGuest.end_date)}</span>
-                  <span>
-                    <Info size={14}/> 
+                  <span style={{ display: 'flex', alignItems: 'center' }}>
+                    <button onClick={() => setIsHistoryOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--brand-color)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }} title="View Call History">
+                      <Info size={14}/> 
+                    </button>
                     <a 
                       href={`https://www.airbnb.com/hosting/stay/${activeGuest.code}`} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px', marginLeft: '4px' }}
+                      style={{ color: 'inherit', textDecoration: 'underline', textUnderlineOffset: '2px', marginLeft: '6px' }}
                     >
                       {activeGuest.code || activeGuest.id}
                     </a>
@@ -766,35 +761,7 @@ function App() {
               </div>
             </div>
 
-            <div className="main-header" style={{ alignSelf: 'flex-start', marginLeft: 'max(0px, calc((100% - 900px) / 2))', marginTop: '30px', marginBottom: '16px' }}>
-              Historial de Llamadas ({callHistory.length})
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%', maxWidth: '900px' }}>
-               {callHistory.length === 0 ? (
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontStyle: 'italic', paddingLeft: 'min(0px, calc((100% - 900px) / 2))' }}>No hay llamadas previas para este huésped.</div>
-               ) : (
-                  callHistory.map(log => (
-                     <div key={log.id} style={{ backgroundColor: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
-                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
-                          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}><CalendarCheck2 size={14}/> {new Date(log.created_at).toLocaleString()}</span>
-                          <span className="guest-status-badge">{log.status === 'ended' || log.status === 'completed' ? 'Finalizada' : log.status === 'failed' ? 'Fallida' : log.status}</span>
-                       </div>
-                       <div style={{ fontSize: '14px', marginBottom: '16px', lineHeight: 1.5, color: '#eee' }}>{log.summary || 'Sin resumen disponible.'}</div>
-                       <details style={{ fontSize: '13px', cursor: 'pointer' }}>
-                         <summary style={{ color: 'var(--brand-color)', outline: 'none', fontWeight: 600 }}>Ver Transcripción en vivo y Audio</summary>
-                         <div className="transcript-box" style={{ marginTop: '12px', whiteSpace: 'pre-wrap' }}>
-                           {(log.transcript || 'No se registró transcripción.')
-                             .replace(/AI:?/gi, 'Katia:')
-                             .replace(/User:?/gi, `${log.guest_name || 'Guest'}:`)}
-                         </div>
-                         {log.recording_url && (
-                           <audio controls src={log.recording_url} style={{ width: '100%', height: '40px', marginTop: '16px', outline: 'none', borderRadius: '6px' }}></audio>
-                         )}
-                       </details>
-                     </div>
-                  ))
-               )}
-            </div>
+
           </>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)', fontSize: 16 }}>
@@ -806,6 +773,45 @@ function App() {
           <img src="/icons/phone-call.svg" style={{ width: 18, filter: 'brightness(200%)' }} alt="Call" /> New Contact
         </button>
       </div>
+      {/* Call History Modal */}
+      {isHistoryOpen && (
+        <div className="modal-overlay" onClick={() => setIsHistoryOpen(false)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', padding: '24px' }}>
+            <div className="modal-header" style={{ marginBottom: '20px' }}>
+              <span>Call History ({callHistory.length})</span>
+              <button className="modal-close" onClick={() => setIsHistoryOpen(false)}><X size={20}/></button>
+            </div>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxHeight: '65vh', overflowY: 'auto', paddingRight: '12px' }}>
+               {callHistory.length === 0 ? (
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontStyle: 'italic', padding: '20px', textAlign: 'center', backgroundColor: 'var(--bg-main)', borderRadius: '8px' }}>No previous calls for this guest.</div>
+               ) : (
+                  callHistory.map(log => (
+                     <div key={log.id} style={{ backgroundColor: 'var(--bg-main)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
+                       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px', alignItems: 'center' }}>
+                          <span style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}><CalendarCheck2 size={14}/> {new Date(log.created_at).toLocaleString()}</span>
+                          <span className="guest-status-badge">{log.status === 'ended' || log.status === 'completed' ? 'Completed' : log.status === 'failed' ? 'Failed' : log.status}</span>
+                       </div>
+                       <div style={{ fontSize: '14px', marginBottom: '16px', lineHeight: 1.5, color: '#eee' }}>{log.summary || 'No summary available.'}</div>
+                       <details style={{ fontSize: '13px', cursor: 'pointer' }}>
+                         <summary style={{ color: 'var(--brand-color)', outline: 'none', fontWeight: 600 }}>View Live Transcript & Audio</summary>
+                         <div className="transcript-box" style={{ marginTop: '12px', whiteSpace: 'pre-wrap', backgroundColor: 'var(--bg-card)', padding: '12px', borderRadius: '8px' }}>
+                           {(log.transcript || 'No transcript generated.')
+                             .replace(/AI:?/gi, 'Katia:')
+                             .replace(/User:?/gi, `${log.guest_name || 'Guest'}:`)}
+                         </div>
+                         {log.recording_url && (
+                           <audio controls src={log.recording_url} style={{ width: '100%', height: '36px', marginTop: '16px', outline: 'none', borderRadius: '6px' }}></audio>
+                         )}
+                       </details>
+                     </div>
+                  ))
+               )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Contact Modal */}
       {isModalOpen && (
         <div className="modal-overlay">
