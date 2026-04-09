@@ -25,6 +25,11 @@ body {
   overflow: hidden;
 }
 
+/* Force custom SVGs to render as solid white */
+img[src^="/icons/"] {
+  filter: brightness(0) invert(1) !important;
+}
+
 #root {
   height: 100%;
 }
