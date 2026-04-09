@@ -52,12 +52,12 @@ const getStatusIcon = (start: string, end: string) => {
   try {
     const s = parseISO(start);
     const e = parseISO(end);
-    if (isPast(endOfDay(e))) return { icon: '✔️', color: '#6b7280', text: 'Checked Out' }; // Gray checkmark for past
-    if (isToday(s)) return { icon: '🛎️', color: '#3b82f6', text: 'Checking in Today' };
-    if (isPast(s)) return { icon: '✅', color: '#22c55e', text: 'Active Stay' };
-    return { icon: '📅', color: '#f59e0b', text: 'Upcoming' };
+    if (isPast(endOfDay(e))) return { icon: <img src="/icons/in-property.svg" style={{ width: 16, filter: 'grayscale(100%) opacity(0.6)' }} alt="out" />, color: '#6b7280', text: 'Checked Out' }; // Gray checkmark for past
+    if (isToday(s)) return { icon: <img src="/icons/check-in-today.svg" style={{ width: 16 }} alt="in" />, color: '#3b82f6', text: 'Checking in Today' };
+    if (isPast(s)) return { icon: <img src="/icons/in-property.svg" style={{ width: 16 }} alt="active" />, color: '#22c55e', text: 'Active Stay' };
+    return { icon: <img src="/icons/upcoming.svg" style={{ width: 16 }} alt="up" />, color: '#f59e0b', text: 'Upcoming' };
   } catch {
-    return { icon: '📅', color: '#f59e0b', text: 'Upcoming' };
+    return { icon: <img src="/icons/upcoming.svg" style={{ width: 16 }} alt="up" />, color: '#f59e0b', text: 'Upcoming' };
   }
 };
 
@@ -425,7 +425,7 @@ function App() {
 
         // Map Hospitable API data structure correctly based on what they actually return
         const mappedData = data.map((item: any) => {
-          let guestId = item.guest?.id || item.guest_id || 'guest';
+          let guestId = String(item.guest?.id || item.guest_id || 'guest');
           let firstName = (item.guest?.first_name || item.guest_first_name || 'Guest').replace(/^\s+|\s+$/g, '');
           let lastName = (item.guest?.last_name || item.guest_last_name || '').replace(/^\s+|\s+$/g, '');
           let pictureUrl = item.guest?.profile_picture || item.guest?.picture_url || item.guest_picture_url || '';
@@ -590,20 +590,20 @@ function App() {
               </div>
               Reservations
             </div>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <button title="Predefined Calls" onClick={() => setIsSettingsOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                <MessageSquare size={20} />
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button title="Predefined Calls" onClick={() => setIsSettingsOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <img src="/icons/contact-prompts.svg" style={{ width: 22 }} alt="Prompts" />
               </button>
-              <button title="Settings" onClick={() => setIsGeneralConfigOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-                <Settings size={20} />
+              <button title="Settings" onClick={() => setIsGeneralConfigOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+                <img src="/icons/settings.svg" style={{ width: 22 }} alt="Settings" />
               </button>
             </div>
           </div>
           <div className="search-bar">
-            <Search size={16} color="var(--text-secondary)" />
+            <img src="/icons/search.svg" style={{ width: 18, opacity: 0.7 }} alt="Search" />
             <input 
               type="text" 
-              placeholder="Search guests..." 
+              placeholder="Search Guests..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -632,7 +632,7 @@ function App() {
           </div>
         </div>
 
-        <div className="sidebar-section-title">History</div>
+        <div className="sidebar-section-title">Guest</div>
         
         <div className="sidebar-list">
           {loading ? (
@@ -703,7 +703,7 @@ function App() {
                   </button>
                 </h2>
                 <div className="guest-meta">
-                  <span><Phone size={14} color="var(--brand-color)"/> {activeGuest.guest.phone_number || 'No phone'}</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><img src="/icons/phone-call.svg" style={{ width: 14 }} alt="Phone" /> {activeGuest.guest.phone_number || 'No phone'}</span>
                   <span><CalendarCheck2 size={14}/> {formatDateRange(activeGuest.start_date, activeGuest.end_date)}</span>
                   <span>
                     <Info size={14}/> 
@@ -787,12 +787,12 @@ function App() {
           </>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)', fontSize: 16 }}>
-            Select a guest from the sidebar to view contact options
+            Select a Guest From the Sidebar to View Contact Options
           </div>
         )}
 
-        <button className="new-call-btn" onClick={() => setIsAddGuestOpen(true)}>
-          <Phone size={18} /> New contact
+        <button className="new-call-btn" onClick={() => setIsAddGuestOpen(true)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+          <img src="/icons/phone-call.svg" style={{ width: 18, filter: 'brightness(200%)' }} alt="Call" /> New Contact
         </button>
       </div>
       {/* Contact Modal */}
@@ -856,10 +856,11 @@ function App() {
             {!currentCallId ? (
               <button 
                 className="btn-primary" 
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 onClick={initiateCall} 
                 disabled={isCalling || !phoneInput.trim()}
               >
-                {isCalling ? <><Loader2 size={16} className="spinner" /> Calling...</> : <><Phone size={16} /> Initiate Outbound Call</>}
+                {isCalling ? <><Loader2 size={16} className="spinner" /> Calling...</> : <><img src="/icons/phone-call.svg" style={{ width: 16, filter: 'brightness(200%)' }} alt="Call" /> Initiate Outbound Call</>}
               </button>
             ) : null}
 

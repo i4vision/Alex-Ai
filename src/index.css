@@ -173,17 +173,7 @@ body {
   position: relative;
 }
 
-.avatar::after {
-  content: '';
-  position: absolute;
-  bottom: 0px;
-  right: 0px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background-color: #2d2d2d;
-  border: 2px solid var(--bg-sidebar);
-}
+
 
 .sidebar-item-info {
   display: flex;
@@ -295,16 +285,7 @@ body {
   font-size: 26px;
 }
 
-.avatar-large::after {
-  width: 18px;
-  height: 18px;
-  border: 3px solid var(--bg-card);
-  background-color: #777; /* Offline status bubble in cards */
-}
 
-.guest-card:hover .avatar-large::after {
-  border-color: var(--bg-card-hover);
-}
 
 .guest-card-name {
   margin-top: 16px;
