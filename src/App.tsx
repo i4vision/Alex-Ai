@@ -52,12 +52,12 @@ const getStatusIcon = (start: string, end: string) => {
   try {
     const s = parseISO(start);
     const e = parseISO(end);
-    if (isPast(endOfDay(e))) return { icon: <img src="/icons/in-property.svg" style={{ width: 16, filter: 'grayscale(100%) opacity(0.6)' }} alt="out" />, color: '#6b7280', text: 'Checked Out' }; // Gray checkmark for past
-    if (isToday(s)) return { icon: <img src="/icons/check-in-today.svg" style={{ width: 16 }} alt="in" />, color: '#3b82f6', text: 'Checking in Today' };
-    if (isPast(s)) return { icon: <img src="/icons/in-property.svg" style={{ width: 16 }} alt="active" />, color: '#22c55e', text: 'Active Stay' };
-    return { icon: <img src="/icons/upcoming.svg" style={{ width: 16 }} alt="up" />, color: '#f59e0b', text: 'Upcoming' };
+    if (isPast(endOfDay(e))) return { icon: <div className="svg-icon" style={{ width: 14, height: 14, backgroundColor: '#6b7280', maskImage: 'url(/icons/in-property.svg)', WebkitMaskImage: 'url(/icons/in-property.svg)' }} title="Checked Out" />, color: '#6b7280', text: 'Checked Out' }; // Gray
+    if (isToday(s)) return { icon: <div className="svg-icon" style={{ width: 16, height: 16, backgroundColor: '#3b82f6', maskImage: 'url(/icons/check-in-today.svg)', WebkitMaskImage: 'url(/icons/check-in-today.svg)' }} title="Checking in Today" />, color: '#3b82f6', text: 'Checking in Today' }; // Blue
+    if (isPast(s)) return { icon: <div className="svg-icon" style={{ width: 16, height: 16, backgroundColor: '#22c55e', maskImage: 'url(/icons/in-property.svg)', WebkitMaskImage: 'url(/icons/in-property.svg)' }} title="Active Stay" />, color: '#22c55e', text: 'Active Stay' }; // Green
+    return { icon: <div className="svg-icon" style={{ width: 16, height: 16, backgroundColor: '#f59e0b', maskImage: 'url(/icons/upcoming.svg)', WebkitMaskImage: 'url(/icons/upcoming.svg)' }} title="Upcoming" />, color: '#f59e0b', text: 'Upcoming' }; // Orange
   } catch {
-    return { icon: <img src="/icons/upcoming.svg" style={{ width: 16 }} alt="up" />, color: '#f59e0b', text: 'Upcoming' };
+    return { icon: <div className="svg-icon" style={{ width: 16, height: 16, backgroundColor: '#f59e0b', maskImage: 'url(/icons/upcoming.svg)', WebkitMaskImage: 'url(/icons/upcoming.svg)' }} title="Upcoming" />, color: '#f59e0b', text: 'Upcoming' };
   }
 };
 
