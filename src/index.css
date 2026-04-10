@@ -122,14 +122,22 @@ img[src^="/icons/"] {
 }
 
 .custom-dates input {
-  background-color: #0f0f0f;
+  background: none;
+  border: none;
   color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 6px;
+  outline: none;
+  font-family: inherit;
   font-size: 12px;
-  flex: 1;
+  padding: 0;
+  max-width: 95px;
   color-scheme: dark;
+}
+
+.custom-dates input::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 2px;
 }
 
 .sidebar-section-title {
