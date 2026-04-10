@@ -134,7 +134,6 @@ img[src^="/icons/"] {
 }
 
 .custom-dates input::-webkit-calendar-picker-indicator {
-  filter: invert(1);
   cursor: pointer;
   padding: 0;
   margin-left: 2px;
