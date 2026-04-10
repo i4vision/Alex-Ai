@@ -44,7 +44,7 @@ const getStatusIcon = (start: string, end: string) => {
   try {
     const s = parseISO(start);
     const e = parseISO(end);
-    if (isPast(endOfDay(e))) return { icon: <div className="svg-icon" style={{ width: 14, height: 14, backgroundColor: '#6b7280', maskImage: 'url(/icons/in-property.svg)', WebkitMaskImage: 'url(/icons/in-property.svg)' }} title="Checked Out" />, color: '#6b7280', text: 'Checked Out' }; // Gray
+    if (isPast(endOfDay(e))) return { icon: <div className="svg-icon" style={{ width: 14, height: 14, backgroundColor: '#6b7280', maskImage: 'url(/icons/folder-xmark-circle.svg)', WebkitMaskImage: 'url(/icons/folder-xmark-circle.svg)' }} title="Checked Out" />, color: '#6b7280', text: 'Checked Out' }; // Gray
     if (isToday(s)) return { icon: <div className="svg-icon" style={{ width: 16, height: 16, backgroundColor: '#3b82f6', maskImage: 'url(/icons/check-in-today.svg)', WebkitMaskImage: 'url(/icons/check-in-today.svg)' }} title="Checking in Today" />, color: '#3b82f6', text: 'Checking in Today' }; // Blue
     if (isPast(s)) return { icon: <div className="svg-icon" style={{ width: 16, height: 16, backgroundColor: '#22c55e', maskImage: 'url(/icons/in-property.svg)', WebkitMaskImage: 'url(/icons/in-property.svg)' }} title="Active Stay" />, color: '#22c55e', text: 'Active Stay' }; // Green
     return { icon: <div className="svg-icon" style={{ width: 16, height: 16, backgroundColor: '#f59e0b', maskImage: 'url(/icons/upcoming.svg)', WebkitMaskImage: 'url(/icons/upcoming.svg)' }} title="Upcoming" />, color: '#f59e0b', text: 'Upcoming' }; // Orange
@@ -537,18 +537,12 @@ function App() {
       return true;
     });
     
-    // Sort so the closest dates to today show up first
+    // Sort so the closest dates to today show up first, enforcing chronological order unconditionally
     return filtered.sort((a: Reservation, b: Reservation) => {
       const dateA = parseISO(a.start_date).getTime();
       const dateB = parseISO(b.start_date).getTime();
       
-      // Default to ascending order (closest upcoming date first)
-      if (dateFilter === 'custom') {
-        // For custom history searches, descending order (newest past date first) is often preferred
-        return dateB - dateA;
-      } else {
-        return dateA - dateB;
-      }
+      return dateA - dateB;
     });
 
   }, [reservations, search, dateFilter, customRange, propertyFilter]);
@@ -616,8 +610,8 @@ function App() {
           <div className="filter-row">
             <select value={dateFilter} onChange={e => setDateFilter(e.target.value as any)} className="date-select">
               <option value="all">Active & Upcoming</option>
-              <option value="30">Next 30 days</option>
-              <option value="-30">Last 30 days</option>
+              <option value="30">Next 30 Days</option>
+              <option value="-30">Last 30 Days</option>
               <option value="custom">Custom</option>
             </select>
             <select value={propertyFilter} onChange={e => setPropertyFilter(e.target.value)} className="date-select" style={{ marginLeft: '8px', flexShrink: 0 }}>
@@ -627,10 +621,13 @@ function App() {
               ))}
             </select>
             {dateFilter === 'custom' && (
-              <div className="custom-dates">
-                <input type="date" value={customRange.start} onChange={e => setCustomRange({...customRange, start: e.target.value})} />
-                <span>-</span>
-                <input type="date" value={customRange.end} onChange={e => setCustomRange({...customRange, end: e.target.value})} />
+              <div className="custom-dates" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <img src="/icons/calendar-days.svg" style={{ width: 14 }} alt="Calendar" />
+                <span style={{ color: 'var(--text-secondary)' }}>[</span>
+                <input type="date" value={customRange.start} onChange={e => setCustomRange({...customRange, start: e.target.value})} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none' }} />
+                <span style={{ color: 'var(--text-secondary)' }}>]  -  [</span>
+                <input type="date" value={customRange.end} onChange={e => setCustomRange({...customRange, end: e.target.value})} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none' }} />
+                <span style={{ color: 'var(--text-secondary)' }}>]</span>
               </div>
             )}
           </div>
@@ -702,17 +699,18 @@ function App() {
               <div className="guest-profile-info">
                 <h2 style={{ display: 'flex', alignItems: 'center' }}>
                   {activeGuest.guest.first_name} {activeGuest.guest.last_name}
-                  <button onClick={openEditGuestModal} style={{ background: 'none', border: 'none', marginLeft: '10px', cursor: 'pointer', color: 'var(--brand-color)', padding: 0, display: 'flex' }}>
-                     <Edit2 size={16} />
+                  <button onClick={openEditGuestModal} title="Edit Contact" style={{ background: 'none', border: 'none', marginLeft: '10px', cursor: 'pointer', color: 'var(--brand-color)', padding: 0, display: 'flex' }}>
+                     <img src="/icons/pencil.svg" style={{ width: 18 }} alt="Edit Contact" />
                   </button>
                 </h2>
                 <div className="guest-meta">
                   <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><img src="/icons/phone-call.svg" style={{ width: 14 }} alt="Phone" /> {activeGuest.guest.phone_number || 'No phone'}</span>
                   <span><CalendarCheck2 size={14}/> {formatDateRange(activeGuest.start_date, activeGuest.end_date)}</span>
-                  <span style={{ display: 'flex', alignItems: 'center' }}>
-                    <button onClick={() => setIsHistoryOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--brand-color)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center' }} title="View Call History">
-                      <Info size={14}/> 
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button onClick={() => setIsHistoryOpen(true)} style={{ background: 'none', border: 'none', color: 'var(--brand-color)', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '13px', fontWeight: 500 }} title="View Call History">
+                      <img src="/icons/info.svg" style={{ width: 22 }} alt="Info"/> Call History
                     </button>
+                    <span style={{ color: 'var(--border-color)' }}>|</span>
                     <a 
                       href={`https://www.airbnb.com/hosting/stay/${activeGuest.code}`} 
                       target="_blank" 
