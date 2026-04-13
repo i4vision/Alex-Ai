@@ -134,9 +134,8 @@ img[src^="/icons/"] {
 }
 
 .custom-dates input::-webkit-calendar-picker-indicator {
-  cursor: pointer;
-  padding: 0;
-  margin-left: 2px;
+  display: none !important;
+  -webkit-appearance: none;
 }
 
 .sidebar-section-title {

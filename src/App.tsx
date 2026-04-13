@@ -1099,19 +1099,15 @@ function App() {
                   <label>Description</label>
                   <input type="text" value={editingPrompt.description} onChange={e => setEditingPrompt({...editingPrompt, description: e.target.value})} placeholder="Ej. Chequeo de inicio" />
                 </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div className="form-group">
-                    <label>Prompt Language</label>
-                    <select value={editingPrompt.language || 'spanish'} onChange={e => setEditingPrompt({...editingPrompt, language: e.target.value})} className="date-select" style={{ marginBottom: 0, padding: '10px' }} disabled={editingPrompt.advanced_options}>
-                      <option value="spanish">Spanish (AI translates and optimizes to English)</option>
-                      <option value="english">English (AI enhances and optimizes it)</option>
-                    </select>
-                  </div>
-                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '16px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <input type="checkbox" id="advOptions" checked={editingPrompt.advanced_options} onChange={e => setEditingPrompt({...editingPrompt, advanced_options: e.target.checked})} />
-                      <label htmlFor="advOptions" style={{ fontSize: '13px', cursor: 'pointer', userSelect: 'none' }}>Advanced Options (Input dual languages directly)</label>
-                    </div>
+                <div className="form-group" style={{ marginBottom: '4px' }}>
+                  <label>Prompt Language</label>
+                  <select value={editingPrompt.language || 'spanish'} onChange={e => setEditingPrompt({...editingPrompt, language: e.target.value})} className="date-select" style={{ marginBottom: '8px', padding: '10px' }} disabled={editingPrompt.advanced_options}>
+                    <option value="spanish">Spanish (AI translates and optimizes to English)</option>
+                    <option value="english">English (AI enhances and optimizes it)</option>
+                  </select>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <input type="checkbox" id="advOptions" checked={editingPrompt.advanced_options} onChange={e => setEditingPrompt({...editingPrompt, advanced_options: e.target.checked})} style={{ scale: '1.1', cursor: 'pointer' }} />
+                    <label htmlFor="advOptions" style={{ fontSize: '13px', cursor: 'pointer', userSelect: 'none', color: 'var(--text-primary)', fontWeight: 500 }}>Advanced Options: Manually inject prompt structure (Bypass AI enhancement)</label>
                   </div>
                 </div>
 
