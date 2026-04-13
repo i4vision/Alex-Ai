@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Search, Phone, CalendarCheck2, Info, X, Loader2, Settings, MessageSquare, Plus, Trash2, Edit2, Save } from 'lucide-react';
 import { format, parseISO, isPast, isToday, addDays, startOfDay, endOfDay } from 'date-fns';
 import { fetchReservations, type Reservation } from './services/hospitable';
@@ -57,6 +57,9 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(() => localStorage.getItem('isLoggedIn') === 'true');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+
+  const startRef = useRef<HTMLInputElement>(null);
+  const endRef = useRef<HTMLInputElement>(null);
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,11 +144,14 @@ function App() {
   };
 
   const handleSavePrompt = async () => {
-    if (!editingPrompt?.title || !editingPrompt?.prompt_text) return alert("Title and Prompt Text required");
+    if (!editingPrompt?.title) return alert("Title required");
+    if (!editingPrompt.advanced_options && !editingPrompt?.prompt_text) return alert("Prompt Text required");
+    if (editingPrompt.advanced_options && (!editingPrompt?.prompt_text || !editingPrompt?.english_prompt)) return alert("Both Spanish UI Label and English Prompt required in advanced mode");
     
     // Generate English version natively through AI immediately before save
     let englishVersion = editingPrompt.english_prompt || '';
-    if (!englishVersion) {
+    
+    if (!editingPrompt.advanced_options && !englishVersion) {
       alert("Generando y optimizando la plantilla en inglés con IA... esto tomará unos segundos.");
       try {
         const res = await fetch('/api/enhance-prompt', {
@@ -622,11 +628,30 @@ function App() {
             </select>
             {dateFilter === 'custom' && (
               <div className="custom-dates" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <img src="/icons/calendar-days.svg" style={{ width: 14 }} alt="Calendar" />
+                <button onClick={() => startRef.current?.showPicker()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }} title="Select Dates">
+                  <img src="/icons/calendar-days.svg" style={{ width: 14 }} alt="Calendar" />
+                </button>
                 <span style={{ color: 'var(--text-secondary)' }}>[</span>
-                <input type="date" value={customRange.start} onChange={e => setCustomRange({...customRange, start: e.target.value})} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none' }} />
+                <input 
+                  ref={startRef}
+                  type="date" 
+                  value={customRange.start} 
+                  onChange={e => {
+                    setCustomRange({...customRange, start: e.target.value});
+                    if (e.target.value) {
+                      setTimeout(() => endRef.current?.showPicker(), 150);
+                    }
+                  }} 
+                  style={{ background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none' }} 
+                />
                 <span style={{ color: 'var(--text-secondary)' }}>]  -  [</span>
-                <input type="date" value={customRange.end} onChange={e => setCustomRange({...customRange, end: e.target.value})} style={{ background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none' }} />
+                <input 
+                  ref={endRef}
+                  type="date" 
+                  value={customRange.end} 
+                  onChange={e => setCustomRange({...customRange, end: e.target.value})} 
+                  style={{ background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none' }} 
+                />
                 <span style={{ color: 'var(--text-secondary)' }}>]</span>
               </div>
             )}
@@ -1043,7 +1068,7 @@ function App() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <button 
                   className="btn-primary" 
-                  onClick={() => setEditingPrompt({ title: '', description: '', prompt_text: '' })}
+                  onClick={() => setEditingPrompt({ title: '', description: '', prompt_text: '', language: 'spanish', advanced_options: false })}
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center' }}
                 >
                   <Plus size={16} /> Add New Call
@@ -1074,16 +1099,38 @@ function App() {
                   <label>Description</label>
                   <input type="text" value={editingPrompt.description} onChange={e => setEditingPrompt({...editingPrompt, description: e.target.value})} placeholder="Ej. Chequeo de inicio" />
                 </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div className="form-group">
+                    <label>Prompt Language</label>
+                    <select value={editingPrompt.language || 'spanish'} onChange={e => setEditingPrompt({...editingPrompt, language: e.target.value})} className="date-select" style={{ marginBottom: 0, padding: '10px' }} disabled={editingPrompt.advanced_options}>
+                      <option value="spanish">Spanish (AI translates and optimizes to English)</option>
+                      <option value="english">English (AI enhances and optimizes it)</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', paddingTop: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <input type="checkbox" id="advOptions" checked={editingPrompt.advanced_options} onChange={e => setEditingPrompt({...editingPrompt, advanced_options: e.target.checked})} />
+                      <label htmlFor="advOptions" style={{ fontSize: '13px', cursor: 'pointer', userSelect: 'none' }}>Advanced Options (Input dual languages directly)</label>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="form-group">
-                  <label>Spanish Prompt Template (Use {'{name}'} for guest name)</label>
+                  <label>{editingPrompt.advanced_options ? 'UI Label & Spanish Fallback' : (editingPrompt.language === 'english' ? 'English Prompt Template' : 'Spanish Prompt Template')} (Use {'{name}'} for guest name)</label>
                   <textarea 
                     value={editingPrompt.prompt_text} 
                     onChange={e => setEditingPrompt({...editingPrompt, prompt_text: e.target.value, english_prompt: ''})}
-                    placeholder="Llama a {name} y pregúntale..."
-                    style={{ minHeight: '120px' }}
+                    placeholder={editingPrompt.language === 'english' || editingPrompt.advanced_options ? "Call {name} and ask them..." : "Llama a {name} y pregúntale..."}
+                    style={{ minHeight: editingPrompt.advanced_options ? '60px' : '120px' }}
                   />
                 </div>
-                {editingPrompt.english_prompt && (
+                {editingPrompt.advanced_options && (
+                  <div className="form-group">
+                     <label>English Override Template (Sent directly to Vapi)</label>
+                     <textarea value={editingPrompt.english_prompt || ''} onChange={e => setEditingPrompt({...editingPrompt, english_prompt: e.target.value})} placeholder="Call {name} and ask them..." style={{ minHeight: '120px' }} />
+                  </div>
+                )}
+                {!editingPrompt.advanced_options && editingPrompt.language !== 'english' && editingPrompt.english_prompt && (
                   <div className="form-group" style={{ opacity: 0.8 }}>
                      <label>English AI Translation (Locked)</label>
                      <textarea readOnly disabled value={editingPrompt.english_prompt} style={{ minHeight: '120px', background: 'rgba(255,255,255,0.03)' }} />
