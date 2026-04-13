@@ -1105,9 +1105,9 @@ function App() {
                     <option value="spanish">Spanish (AI translates and optimizes to English)</option>
                     <option value="english">English (AI enhances and optimizes it)</option>
                   </select>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', background: 'rgba(255,255,255,0.03)', padding: '10px 12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
-                    <input type="checkbox" id="advOptions" checked={editingPrompt.advanced_options} onChange={e => setEditingPrompt({...editingPrompt, advanced_options: e.target.checked})} style={{ scale: '1.1', cursor: 'pointer' }} />
-                    <label htmlFor="advOptions" style={{ fontSize: '13px', cursor: 'pointer', userSelect: 'none', color: 'var(--text-primary)', fontWeight: 500 }}>Advanced Options: Manually inject prompt structure (Bypass AI enhancement)</label>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px', background: 'rgba(255,255,255,0.03)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+                    <input type="checkbox" id="advOptions" checked={editingPrompt.advanced_options} onChange={e => setEditingPrompt({...editingPrompt, advanced_options: e.target.checked})} style={{ width: 'auto', flexShrink: 0, scale: '1.2', cursor: 'pointer', margin: 0 }} />
+                    <label htmlFor="advOptions" style={{ fontSize: '13px', cursor: 'pointer', userSelect: 'none', color: 'var(--text-primary)', fontWeight: 500, lineHeight: 1.4 }}>Advanced Options: Manually inject prompt structure (Bypass AI enhancement)</label>
                   </div>
                 </div>
 
