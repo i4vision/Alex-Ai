@@ -60,6 +60,8 @@ function App() {
 
   const startRef = useRef<HTMLInputElement>(null);
   const endRef = useRef<HTMLInputElement>(null);
+  const addContactStartRef = useRef<HTMLInputElement>(null);
+  const addContactEndRef = useRef<HTMLInputElement>(null);
 
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -607,7 +609,7 @@ function App() {
             <img src="/icons/search.svg" style={{ width: 18, opacity: 0.7 }} alt="Search" />
             <input 
               type="text" 
-              placeholder="Search Guests..." 
+              placeholder="Search Contacts..." 
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -658,7 +660,7 @@ function App() {
           </div>
         </div>
 
-        <div className="sidebar-section-title">Guest</div>
+        <div className="sidebar-section-title">Contact</div>
         
         <div className="sidebar-list">
           {loading ? (
@@ -788,7 +790,7 @@ function App() {
           </>
         ) : (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)', fontSize: 16 }}>
-            Select a Guest From the Sidebar to View Contact Options
+            Select a Contact From the Sidebar to View Contact Options
           </div>
         )}
 
@@ -807,7 +809,7 @@ function App() {
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', maxHeight: '65vh', overflowY: 'auto', paddingRight: '12px' }}>
                {callHistory.length === 0 ? (
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontStyle: 'italic', padding: '20px', textAlign: 'center', backgroundColor: 'var(--bg-main)', borderRadius: '8px' }}>No previous calls for this guest.</div>
+                  <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontStyle: 'italic', padding: '20px', textAlign: 'center', backgroundColor: 'var(--bg-main)', borderRadius: '8px' }}>No previous calls for this contact.</div>
                ) : (
                   callHistory.map(log => (
                      <div key={log.id} style={{ backgroundColor: 'var(--bg-main)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', textAlign: 'left' }}>
@@ -840,7 +842,7 @@ function App() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <span>Contact {selectedGuest?.guest.first_name || 'Guest'}</span>
+              <span>Contact {selectedGuest?.guest.first_name || 'Contact'}</span>
               <button className="modal-close" onClick={closeContactModal}><X size={20}/></button>
             </div>
             
@@ -850,7 +852,7 @@ function App() {
                 type="text" 
                 value={phoneInput} 
                 onChange={(e) => setPhoneInput(e.target.value)}
-                placeholder="+1234567890" 
+                placeholder="+1 (123) 456-7890" 
               />
             </div>
 
@@ -979,7 +981,7 @@ function App() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <span>Edit Guest Profile</span>
+              <span>Edit Contact Profile</span>
               <button className="modal-close" onClick={() => setIsEditGuestOpen(false)}><X size={20}/></button>
             </div>
             
@@ -996,7 +998,7 @@ function App() {
 
             <div className="form-group">
               <label>Phone Number</label>
-              <input type="text" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="+1234567890" />
+              <input type="text" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="+1 (123) 456-7890" />
             </div>
 
             <button className="btn-primary" onClick={handleSaveGuestEdit} style={{ marginTop: '10px' }}>
@@ -1011,7 +1013,7 @@ function App() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <span>Add Guest Manually</span>
+              <span>Add Contact Manually</span>
               <button className="modal-close" onClick={() => setIsAddGuestOpen(false)}><X size={20}/></button>
             </div>
             
@@ -1029,27 +1031,47 @@ function App() {
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div className="form-group">
                 <label>Phone Number</label>
-                <input type="text" value={newGuestPhone} onChange={e => setNewGuestPhone(e.target.value)} placeholder="+1234567890" />
+                <input type="text" value={newGuestPhone} onChange={e => setNewGuestPhone(e.target.value)} placeholder="+1 (123) 456-7890" />
               </div>
               <div className="form-group">
                 <label>Property Name</label>
-                <input type="text" value={newGuestProperty} onChange={e => setNewGuestProperty(e.target.value)} placeholder="Ej. Casa Azul" />
+                <input type="text" value={newGuestProperty} onChange={e => setNewGuestProperty(e.target.value)} placeholder="221" />
               </div>
             </div>
             
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div className="form-group">
-                <label>Check-in Date (Optional)</label>
-                <input type="date" value={newGuestCheckIn} onChange={e => setNewGuestCheckIn(e.target.value)} style={{ colorScheme: 'dark' }} />
-              </div>
-              <div className="form-group">
-                <label>Check-out Date (Optional)</label>
-                <input type="date" value={newGuestCheckOut} onChange={e => setNewGuestCheckOut(e.target.value)} style={{ colorScheme: 'dark' }}/>
+            <div className="form-group">
+              <label>Stay Dates (Optional)</label>
+              <div className="custom-dates" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.2)', padding: '10px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <button onClick={() => addContactStartRef.current?.showPicker()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }} title="Select Dates">
+                  <img src="/icons/calendar-days.svg" style={{ width: 14 }} alt="Calendar" />
+                </button>
+                <span style={{ color: 'var(--text-secondary)' }}> [ </span>
+                <input 
+                  ref={addContactStartRef}
+                  type="date" 
+                  value={newGuestCheckIn} 
+                  onChange={e => {
+                    setNewGuestCheckIn(e.target.value);
+                    if (e.target.value) {
+                      setTimeout(() => addContactEndRef.current?.showPicker(), 150);
+                    }
+                  }} 
+                  style={{ background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none', colorScheme: 'dark' }} 
+                />
+                <span style={{ color: 'var(--text-secondary)' }}> ]  -  [ </span>
+                <input 
+                  ref={addContactEndRef}
+                  type="date" 
+                  value={newGuestCheckOut} 
+                  onChange={e => setNewGuestCheckOut(e.target.value)} 
+                  style={{ background: 'none', border: 'none', color: 'var(--text-primary)', outline: 'none', colorScheme: 'dark' }} 
+                />
+                <span style={{ color: 'var(--text-secondary)' }}> ] </span>
               </div>
             </div>
 
             <button className="btn-primary" onClick={handleSaveManualGuest} style={{ marginTop: '10px' }}>
-              Save Guest
+              Save Contact
             </button>
           </div>
         </div>
@@ -1112,7 +1134,7 @@ function App() {
                 </div>
 
                 <div className="form-group">
-                  <label>{editingPrompt.advanced_options ? 'UI Label & Spanish Fallback' : (editingPrompt.language === 'english' ? 'English Prompt Template' : 'Spanish Prompt Template')} (Use {'{name}'} for guest name)</label>
+                  <label>{editingPrompt.advanced_options ? 'UI Label & Spanish Fallback' : (editingPrompt.language === 'english' ? 'English Prompt Template' : 'Spanish Prompt Template')} (Use {'{name}'} for contact name)</label>
                   <textarea 
                     value={editingPrompt.prompt_text} 
                     onChange={e => setEditingPrompt({...editingPrompt, prompt_text: e.target.value, english_prompt: ''})}

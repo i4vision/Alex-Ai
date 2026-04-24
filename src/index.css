@@ -127,9 +127,9 @@ img[src^="/icons/"] {
   color: var(--text-primary);
   outline: none;
   font-family: inherit;
-  font-size: 12px;
+  font-size: 13px;
   padding: 0;
-  max-width: 95px;
+  max-width: 125px;
   color-scheme: dark;
 }
 
